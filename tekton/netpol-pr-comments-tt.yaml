@@ -1,0 +1,44 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: netpol-pr-comments-tt
+spec:
+  params:
+  - name: repo-url
+    description: URL of repo to checkout
+  - name: old-revision
+    description: Base revision to use in diff
+  - name: new-revision
+    description: Updated revision to use in diff and connectivity report
+  - name: pr-url
+    description: URL of pull-request to put comments in (e.g., https://github.com/np-guard/online-boutique/pull/45)
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      generateName: k8s-netpol-pr-comments-
+    spec:
+      pipelineRef:
+        name: k8s-netpol-pr-comments
+      params:
+      - name: repo-url
+        value: $(tt.params.repo-url)
+      - name: old-revision
+        value: $(tt.params.old-revision)
+      - name: new-revision
+        value: $(tt.params.new-revision)
+      - name: corporate-policies
+        value:
+        - https://github.com/np-guard/baseline-rules/blob/master/examples/restrict_access_to_payment.yaml
+        - https://github.com/np-guard/baseline-rules/blob/master/examples/ciso_denied_ports.yaml
+      - name: pr-url
+        value: $(tt.params.pr-url)
+      workspaces:
+      - name: old-workspace
+        persistentVolumeClaim:
+          claimName: my-pvc
+        subPath: old
+      - name: new-workspace
+        persistentVolumeClaim:
+          claimName: my-pvc
+        subPath: new

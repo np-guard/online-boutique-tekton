@@ -1,0 +1,14 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: netpol-pr-comments-tb
+spec:
+  params:
+  - name: repo-url
+    value: $(body.repository.html_url)
+  - name: old-revision
+    value: $(body.pull_request.base.ref)
+  - name: new-revision
+    value: $(body.pull_request.head.ref)
+  - name: pr-url
+    value: $(body.pull_request.html_url)

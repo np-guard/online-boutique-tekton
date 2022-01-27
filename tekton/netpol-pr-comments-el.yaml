@@ -1,0 +1,11 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: netpol-pr-comments-el
+spec:
+  triggers:
+  - bindings:
+    - ref: netpol-pr-comments-tb
+    template:
+      ref: netpol-pr-comments-tt
+  serviceAccountName: boutique-ci

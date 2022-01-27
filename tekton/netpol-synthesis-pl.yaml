@@ -1,0 +1,78 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: k8s-netpol-synth
+spec:
+  params:
+    - name: repo-full-name
+      type: string
+      description: Repository full name (e.g., np-guard/online-boutique-tekton)
+    - name: corporate-policies
+      type: array
+      description: An array of corporate policy files synthesis must comply with (either as GitHub URLs or as paths under workspace).
+    - name: target-branch
+      type: string
+      description: The branch to commit changes to, and open a PR against
+  workspaces:
+  - name: shared-workspace
+  - name: ssh-creds
+  tasks:
+  - name: fetch-repository
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: shared-workspace
+    - name: ssh-directory
+      workspace: ssh-creds
+    params:
+    - name: url
+      value: "git@github.com:$(params.repo-full-name).git"
+  - name: synthesize-netpols
+    taskRef:
+      name: k8s-netpol-synthesize
+    runAfter:
+    - fetch-repository
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    params:
+    - name: corporate-policies
+      value: ["$(params.corporate-policies[*])"]
+  - name: commit-to-branch
+    runAfter:
+    - synthesize-netpols
+    taskRef:
+      name: git-cli
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+    - name: ssh-directory
+      workspace: ssh-creds
+    params:
+    - name: GIT_USER_NAME
+      value: Tekton User
+    - name: GIT_USER_EMAIL
+      value: tekton_user@tekton.dev
+    - name: GIT_SCRIPT
+      value: |
+        git checkout -b $(params.target-branch)
+        git add $(tasks.synthesize-netpols.results.synth-netpol-file)
+        git commit -m"adding network policies to enforce minimal connectivity"
+        git push --set-upstream origin $(params.target-branch)
+  - name: open-pr
+    taskRef:
+      name: github-open-pr
+    runAfter:
+    - commit-to-branch
+    params:
+    - name: REPO_FULL_NAME
+      value: "$(params.repo-full-name)"
+    - name: HEAD
+      value: $(params.target-branch)
+    - name: BASE
+      value: main
+    - name: TITLE
+      value: Adding network policies to enforce minimal connectivity
+    - name: BODY
+      value: Automatically generated NetworkPolicies

@@ -1,0 +1,116 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: k8s-netpol-pr-comments
+spec:
+  params:
+    - name: repo-url
+      type: string
+      description: URL of repo to checkout
+    - name: old-revision
+      type: string
+      description: Base revision to use in diff
+    - name: new-revision
+      type: string
+      description: Updated revision to use in diff and connectivity report
+    - name: corporate-policies
+      type: array
+      description: An array of corporate policy files to check against (either as GitHub URLs or as paths under workspace).
+    - name: pr-url
+      type: string
+      description: URL of pull-request to put comments in (e.g., https://github.com/np-guard/online-boutique/pull/45)
+  workspaces:
+  - name: old-workspace
+  - name: new-workspace
+  tasks:
+  - name: fetch-old-repository
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: old-workspace
+    params:
+    - name: url
+      value: "$(params.repo-url)"
+    - name: revision
+      value: "$(params.old-revision)"
+  - name: fetch-new-repository
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: new-workspace
+    params:
+    - name: url
+      value: "$(params.repo-url)"
+    - name: revision
+      value: "$(params.new-revision)"
+  - name: make-netpols-diff
+    taskRef:
+      name: k8s-netpol-diff
+    runAfter:
+    - fetch-old-repository
+    - fetch-new-repository
+    workspaces:
+    - name: old
+      workspace: old-workspace
+    - name: new
+      workspace: new-workspace
+  - name: post-diff-pr-comment
+    taskRef:
+      name: github-add-comment
+    runAfter:
+    - make-netpols-diff
+    workspaces:
+    - name: comment-file
+      workspace: new-workspace
+    params:
+    - name: REQUEST_URL
+      value: "$(params.pr-url)"
+    - name: COMMENT_OR_FILE
+      value: "$(tasks.make-netpols-diff.results.connectivity-diff-file)"
+  - name: make-netpols-reports
+    taskRef:
+      name: k8s-netpol-report
+    runAfter:
+    - fetch-new-repository
+    workspaces:
+    - name: source
+      workspace: new-workspace
+  - name: post-connectivity-pr-comment
+    taskRef:
+      name: github-add-comment
+    runAfter:
+    - make-netpols-reports
+    workspaces:
+    - name: comment-file
+      workspace: new-workspace
+    params:
+    - name: REQUEST_URL
+      value: "$(params.pr-url)"
+    - name: COMMENT_OR_FILE
+      value: "$(tasks.make-netpols-reports.results.connectivity-report-file)"
+  - name: verify-netpols
+    taskRef:
+      name: k8s-netpol-verify
+    runAfter:
+    - fetch-new-repository
+    workspaces:
+    - name: source
+      workspace: new-workspace
+    params:
+    - name: corporate-policies
+      value: ["$(params.corporate-policies[*])"]
+  - name: post-verification-pr-comment
+    taskRef:
+      name: github-add-comment
+    runAfter:
+    - verify-netpols
+    workspaces:
+    - name: comment-file
+      workspace: new-workspace
+    params:
+    - name: REQUEST_URL
+      value: "$(params.pr-url)"
+    - name: COMMENT_OR_FILE
+      value: "$(tasks.verify-netpols.results.policy-results-file)"
