@@ -47,7 +47,8 @@ kubectl apply -f netpol-synthesis-pl.yaml
 kubectl apply -f netpol-pr-comments-pl.yaml
 ```
 
-### Install the machinary for triggering the PR-commenting pipeline on PR events
+### Install the machinery for triggering the PR-commenting pipeline on PR events
+See [netpol-pr-comments-tt.yaml](netpol-pr-comments-tt.yaml), [netpol-pr-comments-el.yaml](netpol-pr-comments-el.yaml) and [netpol-pr-comments-tb.yaml](netpol-pr-comments-tb.yaml) in this directory.
 ```commandline
 kubectl apply -f netpol-pr-comments-tt.yaml
 kubectl apply -f netpol-pr-comments-el.yaml
