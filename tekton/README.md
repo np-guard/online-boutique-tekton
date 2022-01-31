@@ -34,13 +34,13 @@ kubectl create secret generic my-ssh-credentials --from-file=~/.ssh/known_hosts 
 kubectl create secret generic github --from-literal token="MY_TOKEN"  # replace with a real GitHub token
 ```
 
-### Install Service Account and RBAC requried for EventListener to work
+### Install Service Account and RBAC required for EventListener to work
 See [ob-sa-rbac.yaml](ob-sa-rbac.yaml) in this directory.
 ```commandline
 cd <path to local clone>/tekton
 kubectl apply -f ob-sa-rbac.yaml
 ```
-### Install the syntehsis pipeline and the PR-commenting pipeline
+### Install the syntheis pipeline and the PR-commenting pipeline
 See [netpol-synthesis-pl.yaml](netpol-synthesis-pl.yaml) and [netpol-pr-comments-pl.yaml](netpol-pr-comments-pl.yaml) in this directory
 ```commandline
 kubectl apply -f netpol-synthesis-pl.yaml
