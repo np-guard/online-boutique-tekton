@@ -13,7 +13,7 @@ spec:
     - https://github.com/np-guard/baseline-rules/blob/master/examples/restrict_access_to_payment.yaml
     - https://github.com/np-guard/baseline-rules/blob/master/examples/ciso_denied_ports.yaml
   - name: target-branch
-    value: set_netpols_tekton
+    value: set_netpols_tekton_$(context.pipelineRun.uid)
   workspaces:
   - name: ssh-creds
     # This secret can be created by running: kubectl create secret generic my-ssh-credentials --from-file=~/.ssh/known_hosts --from-file=~/.ssh/id_rsa
