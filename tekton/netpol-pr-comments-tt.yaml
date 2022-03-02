@@ -13,6 +13,17 @@ spec:
   - name: pr-url
     description: URL of pull-request to put comments in (e.g., https://github.com/np-guard/online-boutique/pull/45)
   resourcetemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: pipelinerun-$(uid)-pvc
+    spec:
+      resources:
+        requests:
+          storage:  5Gi
+      volumeMode: Filesystem
+      accessModes:
+      - ReadWriteOnce
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
     metadata:
@@ -36,9 +47,9 @@ spec:
       workspaces:
       - name: old-workspace
         persistentVolumeClaim:
-          claimName: my-pvc
+          claimName: pipelinerun-$(uid)-pvc
         subPath: old
       - name: new-workspace
         persistentVolumeClaim:
-          claimName: my-pvc
+          claimName: pipelinerun-$(uid)-pvc
         subPath: new
