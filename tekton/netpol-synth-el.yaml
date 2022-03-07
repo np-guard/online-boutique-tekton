@@ -46,7 +46,7 @@ spec:
     metadata:
       name: my-ssh-credentials
     type: Opaque
-    data:
+    stringData:
       id_rsa: $(params.ssh-key)
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
