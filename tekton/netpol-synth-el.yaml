@@ -29,6 +29,8 @@ spec:
     description: URL of repo to checkout
   - name: ssh-key
     description: ssh-key to use for git
+  - name: github-token
+    description: A github token which allows opening a PR
   resourcetemplates:
   - apiVersion: v1
     kind: PersistentVolumeClaim
@@ -48,6 +50,13 @@ spec:
     type: Opaque
     stringData:
       id_rsa: $(params.ssh-key)
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: github
+    type: Opaque
+    stringData:
+      token: $(params.github-token)
   - apiVersion: tekton.dev/v1beta1
     kind: PipelineRun
     metadata:
