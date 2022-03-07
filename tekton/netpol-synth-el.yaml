@@ -1,0 +1,73 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: netpol-synth-el
+spec:
+  triggers:
+  - bindings:
+    - ref: netpol-synth-tb
+    template:
+      ref: netpol-synth-tt
+  serviceAccountName: boutique-ci
+---
+apiVersion: tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: netpol-synth-tb
+spec:
+  params:
+    - name: repo-full-name
+      value:  np-guard/online-boutique-tekton
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: netpol-synth-tt
+spec:
+  params:
+  - name: repo-full-name
+    description: URL of repo to checkout
+  - name: ssh-key
+    description: ssh-key to use for git
+  resourcetemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: pipelinerun-$(uid)-pvc
+    spec:
+      resources:
+        requests:
+          storage:  5Gi
+      volumeMode: Filesystem
+      accessModes:
+        - ReadWriteOnce
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: my-ssh-credentials
+    type: Opaque
+    data:
+      id_rsa: $(params.ssh-key)
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      name: k8s-netpol-synth-$(uid)
+    spec:
+      pipelineRef:
+        name: k8s-netpol-synth
+      params:
+      - name: repo-full-name
+        value: $(params.repo-full-name)
+      - name: corporate-policies
+        value:
+        - https://github.com/np-guard/baseline-rules/blob/master/examples/restrict_access_to_payment.yaml
+        - https://github.com/np-guard/baseline-rules/blob/master/examples/ciso_denied_ports.yaml
+      - name: target-branch
+        value: set_netpols_tekton_$(uid)
+      workspaces:
+      - name: ssh-creds
+        secret:
+          secretName: my-ssh-credentials
+      - name: shared-workspace
+        persistentVolumeClaim:
+          claimName: pipelinerun-$(uid)-pvc
